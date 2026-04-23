@@ -1,0 +1,51 @@
+section, container, #output {
+  font-family: var(--md-font-family);
+  font-size: var(--md-font-size);
+  line-height: 1.75;
+  text-align: left;
+}
+blockquote {
+  margin-top: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+  padding: 0;
+}
+table {
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 14px;
+}
+img {
+  max-width: 100%;
+  height: auto;
+}
+pre {
+  margin: 1em 0;
+  padding: 0;
+  overflow-x: auto;
+}
+code {
+  font-family: Menlo, Monaco, 'Courier New', monospace;
+}
+/* list style reset */
+ul, ol {
+  padding-left: 2em;
+}
+li {
+  margin: 0.3em 0;
+}
+/* link style */
+a {
+  color: var(--md-primary-color);
+  text-decoration: none;
+  border-bottom: 1px solid var(--md-primary-color);
+}
+/* strong/em */
+strong { font-weight: bold; }
+em { font-style: italic; }
+/* hr */
+hr {
+  border: none;
+  border-top: 1px solid var(--md-accent-color);
+  margin: 2em 0;
+}
