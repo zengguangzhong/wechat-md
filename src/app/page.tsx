@@ -551,8 +551,8 @@ export default function EditorPage() {
                 <span className="ml-auto text-blue-500 animate-pulse">转换中...</span>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto bg-gray-50">
-              <div className="max-w-[860px] mx-auto my-4 bg-white shadow-sm rounded-sm">
+              <div className="flex-1 overflow-y-auto bg-gray-50">
+              <div style={{ maxWidth: '860px', margin: '16px auto', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderRadius: '2px' }}>
                 <div
                   ref={previewRef}
                   className="p-6"
