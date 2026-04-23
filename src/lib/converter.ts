@@ -1,11 +1,4 @@
 import { renderMarkdown } from './renderer';
-import { loadThemeCss } from './themes';
-import {
-  buildCss,
-  normalizeInlineCss,
-  inlineCss,
-  removeStyleTags,
-} from './html-builder';
 import {
   DEFAULT_STYLE,
   THEME_STYLE_DEFAULTS,
@@ -38,26 +31,8 @@ export async function convertToWechatHtml(
     ...(options.fontSize ? { fontSize: options.fontSize } : {}),
   };
 
-  // 4. Load theme CSS
-  const { baseCss, themeCss } = loadThemeCss(options.theme);
-  const fullCss = buildCss(baseCss, themeCss, style);
+  // 4. Render with inline styles
+  const { html } = renderMarkdown(markdown, options, style);
 
-  // 5. Render Markdown
-  const { html: rawHtml } = renderMarkdown(markdown, options);
-
-  // 6. Assemble full HTML with CSS
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${fullCss}</style></head><body>${rawHtml}</body></html>`;
-
-  // 7. Inline CSS with juice
-  let inlinedHtml = await inlineCss(fullHtml);
-
-  // 8. Replace remaining CSS variables
-  inlinedHtml = normalizeInlineCss(inlinedHtml, style);
-
-  // 9. Remove style tags
-  inlinedHtml = removeStyleTags(inlinedHtml);
-
-  // 10. Extract body content
-  const bodyMatch = inlinedHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-  return bodyMatch ? bodyMatch[1].trim() : inlinedHtml;
+  return html;
 }

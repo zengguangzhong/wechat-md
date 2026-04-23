@@ -4,7 +4,8 @@ import { marked, type RendererObject, type Tokens } from 'marked';
 import readingTime from 'reading-time';
 
 import { macCodeSvg } from './constants';
-import type { ConvertOptions, ParseResult } from './types';
+import type { ConvertOptions, ParseResult, StyleConfig } from './types';
+import { buildInlineStyles, inlineCodeHighlightStyles } from './inline-styles';
 
 // Register commonly used languages
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -43,41 +44,7 @@ Object.entries(languages).forEach(([name, lang]) => {
   hljs.registerLanguage(name, lang);
 });
 
-// Configure marked
 marked.setOptions({ breaks: true });
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/`/g, '&#96;');
-}
-
-function buildFootnoteArray(footnotes: [number, string, string][]): string {
-  return footnotes
-    .map(([index, title, link]) =>
-      link === title
-        ? `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code>: <i style="word-break: break-all">${title}</i><br/>`
-        : `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i><br/>`
-    )
-    .join('\n');
-}
-
-function transform(legend: string, text: string | null, title: string | null): string {
-  const options = legend.split('-');
-  for (const option of options) {
-    if (option === 'alt' && text) {
-      return text;
-    }
-    if (option === 'title' && title) {
-      return title;
-    }
-  }
-  return '';
-}
 
 function parseFrontMatterAndContent(markdownText: string): ParseResult {
   try {
@@ -85,13 +52,8 @@ function parseFrontMatterAndContent(markdownText: string): ParseResult {
     const yamlData = parsed.attributes as Record<string, any>;
     const markdownContent = parsed.body;
     const readingTimeResult = readingTime(markdownContent);
-    return {
-      yamlData,
-      markdownContent,
-      readingTime: readingTimeResult,
-    };
-  } catch (error) {
-    console.error('Error parsing front-matter:', error);
+    return { yamlData, markdownContent, readingTime: readingTimeResult };
+  } catch {
     return {
       yamlData: {},
       markdownContent: markdownText,
@@ -100,9 +62,17 @@ function parseFrontMatterAndContent(markdownText: string): ParseResult {
   }
 }
 
+function transform(legend: string, text: string | null, title: string | null): string {
+  const options = legend.split('-');
+  for (const option of options) {
+    if (option === 'alt' && text) return text;
+    if (option === 'title' && title) return title;
+  }
+  return '';
+}
+
 function formatHighlightedCode(html: string, preserveNewlines = false): string {
   let formatted = html;
-  // Move spaces between spans into the span
   formatted = formatted.replace(
     /(<span[^>]*>[^<]*<\/span>)(\s+)(<span[^>]*>[^<]*<\/span>)/g,
     (_: string, span1: string, spaces: string, span2: string) =>
@@ -113,140 +83,110 @@ function formatHighlightedCode(html: string, preserveNewlines = false): string {
     (_: string, spaces: string, span: string) =>
       span.replace(/^(<span[^>]*>)/, `$1${spaces}`)
   );
-  // Replace tabs with 4 spaces
   formatted = formatted.replace(/\t/g, '    ');
-
   if (preserveNewlines) {
     formatted = formatted
       .replace(/\r\n/g, '<br/>')
       .replace(/\n/g, '<br/>')
-      .replace(/(>[^<]+)|(^[^<]+)/g, (str: string) => str.replace(/\s/g, '&nbsp;'));
+      .replace(/(>[^<]+)|(^[^<]+)/g, (str) => str.replace(/\s/g, '&nbsp;'));
   } else {
     formatted = formatted.replace(
       /(>[^<]+)|(^[^<]+)/g,
-      (str: string) => str.replace(/\s/g, '&nbsp;')
+      (str) => str.replace(/\s/g, '&nbsp;')
     );
   }
-
   return formatted;
 }
 
 function highlightAndFormatCode(
-  text: string,
-  language: string,
-  showLineNumber: boolean
+  text: string, language: string, showLineNumber: boolean
 ): string {
-  let highlighted = '';
-
   if (showLineNumber) {
     const rawLines = text.replace(/\r\n/g, '\n').split('\n');
-
     const highlightedLines = rawLines.map((lineRaw) => {
       const lineHtml = hljs.highlight(lineRaw, { language }).value;
       const formatted = formatHighlightedCode(lineHtml, false);
       return formatted === '' ? '&nbsp;' : formatted;
     });
-
     const lineNumbersHtml = highlightedLines
-      .map((_, idx) => `<section style="padding:0 10px 0 0;line-height:1.75">${idx + 1}</section>`)
+      .map((_, idx) => `<section style="padding:0 10px 0 0;line-height:1.75;user-select:none">${idx + 1}</section>`)
       .join('');
     const codeInnerHtml = highlightedLines.join('<br/>');
     const codeLinesHtml = `<div style="white-space:pre;min-width:max-content;line-height:1.75">${codeInnerHtml}</div>`;
-    const lineNumberColumnStyles =
-      'text-align:right;padding:8px 0;border-right:1px solid rgba(0,0,0,0.04);user-select:none;background:var(--code-bg,transparent);';
-
-    highlighted = `
+    return `
       <section style="display:flex;align-items:flex-start;overflow-x:hidden;overflow-y:auto;width:100%;max-width:100%;padding:0;box-sizing:border-box">
-        <section class="line-numbers" style="${lineNumberColumnStyles}">${lineNumbersHtml}</section>
-        <section class="code-scroll" style="flex:1 1 auto;overflow-x:auto;overflow-y:visible;padding:8px;min-width:0;box-sizing:border-box">${codeLinesHtml}</section>
-      </section>
-    `;
+        <section style="text-align:right;padding:8px 0;border-right:1px solid rgba(0,0,0,0.04);user-select:none">${lineNumbersHtml}</section>
+        <section style="flex:1 1 auto;overflow-x:auto;overflow-y:visible;padding:8px;min-width:0;box-sizing:border-box">${codeLinesHtml}</section>
+      </section>`;
   } else {
     const rawHighlighted = hljs.highlight(text, { language }).value;
-    highlighted = formatHighlightedCode(rawHighlighted, true);
+    return formatHighlightedCode(rawHighlighted, true);
   }
-
-  return highlighted;
 }
 
 export function renderMarkdown(
   markdown: string,
-  options: ConvertOptions
+  options: ConvertOptions,
+  styleConfig: StyleConfig
 ): { html: string; title: string; readingTime: any } {
-  // Parse frontmatter
   const { yamlData, markdownContent, readingTime: readingTimeResult } =
     parseFrontMatterAndContent(markdown);
 
   const title = yamlData.title || '';
+  const s = buildInlineStyles(styleConfig);
 
-  // Footnotes collection
   const footnotes: [number, string, string][] = [];
   let footnoteIndex = 0;
-
-  // List tracking for ordered/unordered
   const listOrderedStack: boolean[] = [];
   const listCounters: number[] = [];
 
   function addFootnote(title: string, link: string): number {
-    const existing = footnotes.find(([, , existingLink]) => existingLink === link);
-    if (existing) {
-      return existing[0];
-    }
+    const existing = footnotes.find(([, , l]) => l === link);
+    if (existing) return existing[0];
     footnotes.push([++footnoteIndex, title, link]);
     return footnoteIndex;
   }
 
-  function styledContent(styleLabel: string, content: string, tagName?: string): string {
-    const tag = tagName ?? styleLabel;
-    const className = `${styleLabel.replace(/_/g, '-')}`;
-    const headingAttr = /^h\d$/.test(tag) ? ' data-heading="true"' : '';
-    return `<${tag} class="${className}"${headingAttr}>${content}</${tag}>`;
-  }
-
   function buildReadingTime(): string {
-    if (!options.showReadingTime) {
-      return '';
-    }
-    if (!readingTimeResult.words) {
-      return '';
-    }
-    return `
-      <blockquote class="md-blockquote">
-        <p class="md-blockquote-p">字数 ${readingTimeResult.words}，阅读大约需 ${Math.ceil(readingTimeResult.minutes)} 分钟</p>
-      </blockquote>
-    `;
+    if (!options.showReadingTime || !readingTimeResult.words) return '';
+    return `<blockquote style="${s.blockquote}"><p style="${s.blockquoteP}">字数 ${readingTimeResult.words}，阅读大约需 ${Math.ceil(readingTimeResult.minutes)} 分钟</p></blockquote>`;
   }
 
   function buildFootnotes(): string {
-    if (!footnotes.length) {
-      return '';
-    }
-    return (
-      styledContent('h4', '引用链接') +
-      styledContent('footnotes', buildFootnoteArray(footnotes), 'p')
-    );
+    if (!footnotes.length) return '';
+    const items = footnotes
+      .map(([idx, t, link]) =>
+        link === t
+          ? `<code style="font-size:90%;opacity:0.6">[${idx}]</code>: <i style="word-break:break-all">${t}</i><br/>`
+          : `<code style="font-size:90%;opacity:0.6">[${idx}]</code> ${t}: <i style="word-break:break-all">${link}</i><br/>`
+      )
+      .join('\n');
+    return `<h4 style="${s.h4}">引用链接</h4><p style="${s.footnotes}">${items}</p>`;
   }
 
   const renderer: RendererObject = {
     heading({ tokens, depth }: Tokens.Heading) {
       const text = this.parser.parseInline(tokens);
       const tag = `h${depth}`;
-      return styledContent(tag, text);
+      const headingAttr = ' data-heading="true"';
+      const styleMap: Record<string, string> = {
+        h1: s.h1, h2: s.h2, h3: s.h3, h4: s.h4, h5: s.h5, h6: s.h6,
+      };
+      return `<${tag} class="h${depth}"${headingAttr} style="${styleMap[tag] || s.h1}">${text}</${tag}>`;
     },
 
     paragraph({ tokens }: Tokens.Paragraph): string {
       const text = this.parser.parseInline(tokens);
-      const isFigureImage = text.includes('<figure') && text.includes('<img');
-      const isEmpty = text.trim() === '';
-      if (isFigureImage || isEmpty) {
-        return text;
-      }
-      return styledContent('p', text);
+      if (text.includes('<figure') && text.includes('<img')) return text;
+      if (text.trim() === '') return text;
+      return `<p style="${s.p}">${text}</p>`;
     },
 
     blockquote({ tokens }: Tokens.Blockquote): string {
       const text = this.parser.parse(tokens);
-      return styledContent('blockquote', text);
+      // Replace blockquote > p styles
+      const styled = text.replace(/<p style="[^"]*">/g, `<p style="${s.blockquoteP}">`);
+      return `<blockquote style="${s.blockquote}">${styled}</blockquote>`;
     },
 
     code({ text, lang = '' }: Tokens.Code): string {
@@ -254,27 +194,27 @@ export function renderMarkdown(
       const isLanguageRegistered = hljs.getLanguage(langText);
       const language = isLanguageRegistered ? langText : 'plaintext';
 
-      const highlighted = highlightAndFormatCode(
-        text,
-        language,
-        !!options.showLineNumber
-      );
+      const highlighted = highlightAndFormatCode(text, language, !!options.showLineNumber);
+      const styledHighlighted = inlineCodeHighlightStyles(highlighted);
 
-      const macSignStyle = options.macCodeBlock !== false ? 'display: flex;' : 'display: none;';
-      const span = `<span class="mac-sign" style="${macSignStyle} padding: 10px 14px 0;">${macCodeSvg}</span>`;
+      const macSignStyle = options.macCodeBlock !== false ? 'display:flex' : 'display:none';
+      const span = `<span class="mac-sign" style="${macSignStyle};padding:10px 14px 0">${macCodeSvg}</span>`;
       let pendingAttr = '';
       if (!isLanguageRegistered && langText !== 'plaintext') {
         const escapedText = text.replace(/"/g, '&quot;');
-        pendingAttr = ` data-language-pending="${langText}" data-raw-code="${escapedText}" data-show-line-number="${options.showLineNumber}"`;
+        pendingAttr = ` data-language-pending="${langText}" data-raw-code="${escapedText}"`;
       }
-      const code = `<code class="language-${lang}"${pendingAttr}>${highlighted}</code>`;
-
-      return `<pre class="hljs code__pre">${span}${code}</pre>`;
+      const code = `<code class="language-${lang}" style="${s.codeInPre}"${pendingAttr}>${styledHighlighted}</code>`;
+      return `<pre class="hljs code__pre" style="${s.pre}">${span}${code}</pre>`;
     },
 
     codespan({ text }: Tokens.Codespan): string {
-      const escapedText = escapeHtml(text);
-      return styledContent('codespan', escapedText, 'code');
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+      return `<code style="${s.codespan}">${escaped}</code>`;
     },
 
     list({ ordered, items, start = 1 }: Tokens.List) {
@@ -283,7 +223,9 @@ export function renderMarkdown(
       const html = items.map((item) => this.listitem(item)).join('');
       listOrderedStack.pop();
       listCounters.pop();
-      return styledContent(ordered ? 'ol' : 'ul', html);
+      const tag = ordered ? 'ol' : 'ul';
+      const listStyle = ordered ? s.ol : s.ul;
+      return `<${tag} style="${listStyle}">${html}</${tag}>`;
     },
 
     listitem(token: Tokens.ListItem) {
@@ -299,108 +241,87 @@ export function renderMarkdown(
           .parse(token.tokens)
           .replace(/^<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/, '$1');
       }
-      return styledContent('listitem', `${prefix}${content}`, 'li');
+      return `<li style="${s.li}">${prefix}${content}</li>`;
     },
 
     image({ href, title, text }: Tokens.Image): string {
       const newText = options.legend ? transform(options.legend, text, title) : '';
-      const subText = newText ? styledContent('figcaption', newText) : '';
+      const subText = newText ? `<p style="${s.figcaption}">${newText}</p>` : '';
       const titleAttr = title ? ` title="${title}"` : '';
-      return `<figure><img src="${href}"${titleAttr} alt="${text}"/>${subText}</figure>`;
+      return `<figure style="margin:1.5em 8px"><img src="${href}"${titleAttr} alt="${text}" style="${s.img}"/>${subText}</figure>`;
     },
 
     link({ href, title, text, tokens }: Tokens.Link): string {
       const parsedText = this.parser.parseInline(tokens);
       if (/^https?:\/\/mp\.weixin\.qq\.com/.test(href)) {
-        return `<a href="${href}" title="${title || text}">${parsedText}</a>`;
+        return `<a href="${href}" title="${title || text}" style="${s.a}">${parsedText}</a>`;
       }
-      if (href === text) {
-        return parsedText;
-      }
+      if (href === text) return parsedText;
       if (options.citeLinks) {
         const ref = addFootnote(title || text, href);
-        return `<a href="${href}" title="${title || text}">${parsedText}<sup>[${ref}]</sup></a>`;
+        return `<a href="${href}" title="${title || text}" style="${s.a}">${parsedText}<sup>[${ref}]</sup></a>`;
       }
-      return `<a href="${href}" title="${title || text}">${parsedText}</a>`;
+      return `<a href="${href}" title="${title || text}" style="${s.a}">${parsedText}</a>`;
     },
 
     strong({ tokens }: Tokens.Strong): string {
-      return styledContent('strong', this.parser.parseInline(tokens));
+      return `<strong style="${s.strong}">${this.parser.parseInline(tokens)}</strong>`;
     },
 
     em({ tokens }: Tokens.Em): string {
-      return styledContent('em', this.parser.parseInline(tokens));
+      return `<em style="${s.em}">${this.parser.parseInline(tokens)}</em>`;
     },
 
     table({ header, rows }: Tokens.Table): string {
       const headerRow = header
         .map((cell) => {
           const text = this.parser.parseInline(cell.tokens);
-          return styledContent('th', text);
+          return `<th style="${s.th}">${text}</th>`;
         })
         .join('');
       const body = rows
         .map((row) => {
-          const rowContent = row.map((cell) => this.tablecell(cell)).join('');
-          return styledContent('tr', rowContent);
+          const rowContent = row.map((cell) => {
+            const text = this.parser.parseInline(cell.tokens);
+            return `<td style="${s.td}">${text}</td>`;
+          }).join('');
+          return `<tr>${rowContent}</tr>`;
         })
         .join('');
-      return `
-        <section style="max-width: 100%; overflow: auto">
-          <table class="preview-table">
-            <thead>${headerRow}</thead>
-            <tbody>${body}</tbody>
-          </table>
-        </section>
-      `;
+      return `<section style="max-width:100%;overflow:auto"><table style="${s.table}"><thead>${headerRow}</thead><tbody>${body}</tbody></table></section>`;
     },
 
     tablecell(token: Tokens.TableCell): string {
       const text = this.parser.parseInline(token.tokens);
-      return styledContent('td', text);
+      return `<td style="${s.td}">${text}</td>`;
     },
 
-    hr(_: Tokens.Hr): string {
-      return styledContent('hr', '');
+    hr() {
+      return `<hr style="${s.hr}"/>`;
     },
   };
 
   marked.use({ renderer });
 
-  // Parse markdown to HTML
   let html = marked.parse(markdownContent) as string;
-
-  // Post-process: add reading time at top
   html = buildReadingTime() + html;
-
-  // Post-process: add footnotes at bottom
   html += buildFootnotes();
 
-  // Post-process: add mac code block style
-  html += `
-    <style>
-      .hljs.code__pre > .mac-sign {
-        display: ${options.macCodeBlock !== false ? 'flex' : 'none'};
-      }
-    </style>
-  `;
+  // h2 strong should inherit white color
+  html = html.replace(/<h2[^>]*>/g, (match) => {
+    if (match.includes('style=')) {
+      return match.replace(/style="([^"]*)"/, 'style="$1"');
+    }
+    return match;
+  });
 
-  // Post-process: ensure h2 strong inherits color
-  html += `
-    <style>
-      h2 strong {
-        color: inherit !important;
-      }
-    </style>
-  `;
-
-  // Post-process: remove first heading if keepTitle is false
+  // Remove first heading if keepTitle is false
   if (!options.keepTitle) {
     html = html.replace(/<h[12][^>]*>[\s\S]*?<\/h[12]>/, '');
   }
 
-  // Wrap in section container
-  html = styledContent('container', html, 'section');
+  // Wrap in container
+  html = `<section class="container" style="${s.container}">${html}</section>`;
 
   return { html, title, readingTime: readingTimeResult };
 }
