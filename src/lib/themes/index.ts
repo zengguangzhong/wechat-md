@@ -8,15 +8,11 @@ export function loadThemeCss(theme: ThemeName): { baseCss: string; themeCss: str
   const baseCss = fs.readFileSync(path.join(themesDir, 'base.css'), 'utf-8');
 
   const themeCssMap: Record<ThemeName, string[]> = {
-    default: ['default.css'],
-    grace: ['default.css', 'grace.css'],
-    simple: ['default.css', 'simple.css'],
-    modern: ['modern.css'],
     tech: ['tech.css'],
     growth: ['growth.css'],
   };
 
-  const files = themeCssMap[theme] || ['default.css'];
+  const files = themeCssMap[theme];
   const themeCss = files.map(f => fs.readFileSync(path.join(themesDir, f), 'utf-8')).join('\n');
 
   return { baseCss, themeCss };
