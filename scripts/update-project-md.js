@@ -87,8 +87,8 @@ function updateProjectMd(changes) {
   const { msg, hash } = getCommitInfo();
   const logEntry = `| ${TODAY} | ${msg} | \`${hash}\` |`;
 
-  // 检查是否已经有今天的记录
-  if (!content.includes(`| ${TODAY} |`)) {
+  // 检查是否已经有该提交的记录（用 hash 判断更准确）
+  if (!content.includes(hash)) {
     content = content.replace(
       '| 日期 | 更新内容 | 提交 |',
       '| 日期 | 更新内容 | 提交 |\n' + logEntry

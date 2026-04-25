@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+# post-commit hook: 每次提交后自动更新 PROJECT.md
+# 更新后需要手动 amend 或下次提交时包含
+#
+
+# 如果设置了 SKIP_HOOK 环境变量，跳过
+if [ "$SKIP_HOOK" = "1" ]; then
+  exit 0
+fi
+
+echo "📝 正在更新 PROJECT.md..."
+
+# 使用 git rev-parse 获取项目根目录
+PROJECT_DIR=$(git rev-parse --show-toplevel)
+
+# 运行更新脚本
+node "$PROJECT_DIR/scripts/update-project-md.js"
+
+# 如果有变更，自动添加到暂存区，提示用户 amend
+if ! git diff --quiet "$PROJECT_DIR/PROJECT.md" 2>/dev/null; then
+  echo "📄 PROJECT.md 已更新"
+  echo "💡 运行以下命令将更新包含到上次提交（跳过 hook 避免循环）："
+  echo "   SKIP_HOOK=1 git add PROJECT.md && SKIP_HOOK=1 git commit --amend --no-edit"
+fi
