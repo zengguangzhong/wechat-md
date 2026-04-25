@@ -291,24 +291,7 @@ pnpm lint
 
 ---
 
-## 十、项目更新日志
-
-| 日期 | 更新内容 | 提交 |
-| 2026-04-25 | fix: 优化 git hook，pre-commit 更新统计，post-commit 追加日志并自动 amend | `89640f8` |
-| 2026-04-25 | fix: 修复构建错误并优化 git hook | `69090d0` |
-| 2026-04-25 | feat: add code copy button and fix font-family issues | `8a5d860` |
-| 2026-04-25 | feat: 完善项目文档和 git hook 自动更新机制 | `efe1b79` |
-| 2026-04-25 | feat: 完善项目文档和 git hook 自动更新机制 | `031e4e9` |
-| 2026-04-25 | feat: 完善项目文档和 git hook 自动更新机制 | `c59547d` |
-| 2026-04-25 | feat: 完善项目文档和 git hook 自动更新机制 | `b8c3d44` |
-| 2026-04-25 | feat: 完善项目文档和 git hook 自动更新机制 | `fb1cf04` |
-| 2026-04-25 | docs: 添加项目说明文档和自动更新机制 | `1626b23` |
-|------|----------|------|
-| 2026-04-25 | 初始项目文档，记录已实现和未实现功能 | - |
-
----
-
-## 十一、参考
+## 十、参考
 
 - 项目功能参考：[baoyu-markdown-to-html](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-markdown-to-html)
 - Next.js 文档：`node_modules/next/dist/docs/`

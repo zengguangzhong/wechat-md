@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "update-docs": "node scripts/update-project-md.js",
-    "prepare": "node scripts/install-hooks.js"
+    "lint": "eslint"
   },
   "dependencies": {
     "@types/katex": "^0.16.8",
