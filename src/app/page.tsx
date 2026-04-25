@@ -5,10 +5,8 @@ import { renderMarkdown } from "@/lib/client-converter";
 import {
   DEFAULT_STYLE,
   THEME_STYLE_DEFAULTS,
-  COLOR_PRESETS as LIB_COLOR_PRESETS,
   FONT_FAMILY_MAP,
 } from "@/lib/constants";
-import { adjustLightness } from "@/lib/color-utils";
 import type { ConvertOptions, StyleConfig } from "@/lib/types";
 
 const SAMPLE_MD = `# 用 AI 重塑内容创作
@@ -77,22 +75,6 @@ const THEMES: { name: ThemeName; label: string; desc: string }[] = [
   { name: "growth", label: "成长", desc: "安静生长，适合成长感悟" },
 ];
 
-const COLOR_PRESETS = [
-  { name: "blue", color: "#0F4C81", label: "蓝" },
-  { name: "green", color: "#009874", label: "绿" },
-  { name: "vermilion", color: "#FA5151", label: "朱" },
-  { name: "purple", color: "#92617E", label: "紫" },
-  { name: "sky", color: "#55C9EA", label: "天蓝" },
-  { name: "rose", color: "#B76E79", label: "玫" },
-  { name: "olive", color: "#556B2F", label: "橄榄" },
-  { name: "black", color: "#333333", label: "墨" },
-  { name: "orange", color: "#D97757", label: "橙" },
-  { name: "red", color: "#A93226", label: "红" },
-  { name: "pink", color: "#FFB7C5", label: "粉" },
-  { name: "gray", color: "#A9A9A9", label: "灰" },
-  { name: "yellow", color: "#FECE00", label: "黄" },
-];
-
 const FONT_OPTIONS = [
   { name: "sans", label: "黑体" },
   { name: "serif", label: "宋体" },
@@ -100,14 +82,12 @@ const FONT_OPTIONS = [
   { name: "mono", label: "等宽" },
 ];
 
-const FONT_SIZE_OPTIONS = ["14px", "15px", "16px", "17px", "18px"];
+const FONT_SIZE_OPTIONS = ["14px", "16px"];
 
 export default function EditorPage() {
   const [markdown, setMarkdown] = useState(SAMPLE_MD);
   const [html, setHtml] = useState("");
   const [theme, setTheme] = useState<ThemeName>("tech");
-  const [primaryColor, setPrimaryColor] = useState("blue");
-  const [customColor, setCustomColor] = useState("#0F4C81");
   const [fontFamily, setFontFamily] = useState("sans");
   const [fontSize, setFontSize] = useState("16px");
   const [macCodeBlock, setMacCodeBlock] = useState(true);
@@ -127,12 +107,6 @@ export default function EditorPage() {
   const doConvert = useCallback((md: string, opts: ConvertOptions) => {
     setLoading(true);
     try {
-      let primaryColor = opts.primaryColor
-        ? LIB_COLOR_PRESETS[opts.primaryColor] ?? opts.primaryColor
-        : undefined;
-      if (primaryColor && opts.colorLightness) {
-        primaryColor = adjustLightness(primaryColor, opts.colorLightness);
-      }
       const fontFamily = opts.fontFamily
         ? FONT_FAMILY_MAP[opts.fontFamily] ?? opts.fontFamily
         : undefined;
@@ -140,10 +114,10 @@ export default function EditorPage() {
       const style: StyleConfig = {
         ...DEFAULT_STYLE,
         ...themeDefaults,
-        ...(primaryColor ? { primaryColor } : {}),
         ...(fontFamily ? { fontFamily } : {}),
         ...(opts.fontSize ? { fontSize: opts.fontSize } : {}),
         theme: opts.theme,
+        colorLightness: opts.colorLightness,
       };
       const { html: renderedHtml } = renderMarkdown(md, opts, style);
       setHtml(renderedHtml);
@@ -157,11 +131,8 @@ export default function EditorPage() {
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      const resolvedColor =
-        COLOR_PRESETS.find((c) => c.name === primaryColor)?.color || customColor;
       doConvert(markdown, {
         theme,
-        primaryColor: resolvedColor,
         fontFamily,
         fontSize,
         macCodeBlock,
@@ -177,7 +148,7 @@ export default function EditorPage() {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [
-    markdown, theme, primaryColor, customColor, fontFamily, fontSize,
+    markdown, theme, fontFamily, fontSize,
     macCodeBlock, showLineNumber, citeLinks, showReadingTime, keepTitle, legend,
     colorLightness,
     doConvert,
@@ -272,82 +243,27 @@ export default function EditorPage() {
               </div>
             </div>
 
-            {/* Primary Color */}
+            {/* Color Lightness */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                🖌️ 主色调
+                🎨 主题深浅
               </label>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {COLOR_PRESETS.map((c) => (
-                  <button
-                    key={c.name}
-                    onClick={() => {
-                      setPrimaryColor(c.name);
-                      setColorLightness(0);
-                    }}
-                    className={`w-7 h-7 rounded-full border-2 transition-all ${
-                      primaryColor === c.name && colorLightness === 0
-                        ? "border-blue-500 scale-110"
-                        : "border-gray-200 hover:border-gray-400"
-                    }`}
-                    style={{ backgroundColor: c.color }}
-                    title={c.label}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <input
-                  type="color"
-                  value={customColor}
-                  onChange={(e) => {
-                    setCustomColor(e.target.value);
-                    setPrimaryColor("custom");
-                    setColorLightness(0);
-                  }}
-                  className="w-7 h-7 rounded cursor-pointer border-0"
-                />
-                <span className="text-xs text-gray-500">自定义颜色</span>
-              </div>
-
-              {/* Lightness Slider */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-400">颜色深浅</span>
+                  <span className="text-[10px] text-gray-400">深</span>
                   <span className="text-[10px] text-gray-500 font-medium">
                     {colorLightness > 0 ? `+${colorLightness}%` : `${colorLightness}%`}
                   </span>
-                </div>
-                <div className="flex items-center gap-2">
                   <span className="text-[10px] text-gray-400">浅</span>
-                  <input
-                    type="range"
-                    min={-40}
-                    max={40}
-                    value={colorLightness}
-                    onChange={(e) => setColorLightness(Number(e.target.value))}
-                    className="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                  />
-                  <span className="text-[10px] text-gray-400">深</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded border border-gray-200"
-                    style={{
-                      backgroundColor: (() => {
-                        const base =
-                          COLOR_PRESETS.find((c) => c.name === primaryColor)?.color || customColor;
-                        return colorLightness ? adjustLightness(base, colorLightness) : base;
-                      })(),
-                    }}
-                  />
-                  <span className="text-[10px] text-gray-500 font-mono">
-                    {(() => {
-                      const base =
-                        COLOR_PRESETS.find((c) => c.name === primaryColor)?.color || customColor;
-                      return colorLightness ? adjustLightness(base, colorLightness) : base;
-                    })()}
-                  </span>
-                </div>
+                <input
+                  type="range"
+                  min={-30}
+                  max={30}
+                  value={colorLightness}
+                  onChange={(e) => setColorLightness(Number(e.target.value))}
+                  className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                />
               </div>
             </div>
 
@@ -480,26 +396,6 @@ export default function EditorPage() {
                 </div>
               </div>
               {/* Color */}
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-gray-500 mb-2">🖌️ 主色调</label>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {COLOR_PRESETS.map((c) => (
-                    <button
-                      key={c.name}
-                      onClick={() => setPrimaryColor(c.name)}
-                      className={`w-7 h-7 rounded-full border-2 ${
-                        primaryColor === c.name ? "border-blue-500 scale-110" : "border-gray-200"
-                      }`}
-                      style={{ backgroundColor: c.color }}
-                      title={c.label}
-                    />
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="color" value={customColor} onChange={(e) => { setCustomColor(e.target.value); setPrimaryColor("custom"); }} className="w-7 h-7 rounded cursor-pointer" />
-                  <span className="text-xs text-gray-500">自定义</span>
-                </div>
-              </div>
               {/* Font */}
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-gray-500 mb-2">Aa 字体</label>

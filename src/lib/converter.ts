@@ -30,6 +30,7 @@ export async function convertToWechatHtml(
     ...(primaryColor ? { primaryColor } : {}),
     ...(fontFamily ? { fontFamily } : {}),
     ...(options.fontSize ? { fontSize: options.fontSize } : {}),
+    ...(options.colorLightness !== undefined ? { colorLightness: options.colorLightness } : {}),
   };
 
   // 4. Render with inline styles

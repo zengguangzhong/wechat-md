@@ -1,4 +1,18 @@
 import type { StyleConfig } from './types';
+import { hexToHsl, hslToHex } from './color-utils';
+
+/**
+ * 调节颜色深浅
+ * @param hex 原始颜色
+ * @param offset 亮度偏移量，范围 -100 ~ 100
+ * @returns 调节后的 HEX 颜色
+ */
+function adjustColorLightness(hex: string, offset: number): string {
+  if (!offset || offset === 0) return hex;
+  const [h, s, l] = hexToHsl(hex);
+  const newL = Math.max(5, Math.min(95, l + offset));
+  return hslToHex(h, s, newL);
+}
 
 /**
  * 解析 HSL 字符串为 HEX
@@ -157,22 +171,28 @@ export function inlineCodeHighlightStyles(html: string, theme?: string): string 
 }
 
 function buildTechStyles(
-  primaryColor: string,
+  _primaryColor: string,
   fontFamily: string,
   fontSize: string,
   fg: string,
-  blockquoteBackground: string,
+  _blockquoteBackground: string,
   containerBg: string,
-  accentColor: string
+  _accentColor: string,
+  lightnessOffset: number
 ) {
+  // 科技主题使用固定的橙色系配色，支持深浅调节
+  const primaryColor = adjustColorLightness('#E88A3C', lightnessOffset);
+  const accentColor = adjustColorLightness('#F5A65A', lightnessOffset);
+  const blockquoteBackground = '#FEF9F3';
+
   return {
     container: `font-family: ${fontFamily}; font-size: ${fontSize}; line-height: 1.8; text-align: left; ${containerBg !== 'transparent' ? `background: ${containerBg};` : ''} padding: 0 10px;`,
 
-    h1: `color: #C45D1A; font-size: 24px; font-weight: 800; line-height: 1.3; border-bottom: 2.5px solid ${accentColor}; padding-bottom: 11px; margin: 0 0 24px 0;`,
+    h1: `color: ${adjustColorLightness('#C45D1A', lightnessOffset)}; font-size: 24px; font-weight: 800; line-height: 1.3; border-bottom: 2.5px solid ${accentColor}; padding-bottom: 11px; margin: 0 0 24px 0;`,
 
-    h2: `color: #B04F12; font-size: 20px; font-weight: 700; line-height: 1.38; margin: 28px auto 14px auto; text-align: center;`,
+    h2: `color: ${adjustColorLightness('#B04F12', lightnessOffset)}; font-size: 20px; font-weight: 700; line-height: 1.38; margin: 28px auto 14px auto; text-align: center;`,
 
-    h3: `color: #8B3D0E; font-size: 16px; font-weight: 600; line-height: 1.45; margin: 20px 0 10px 0;`,
+    h3: `color: ${adjustColorLightness('#8B3D0E', lightnessOffset)}; font-size: 16px; font-weight: 600; line-height: 1.45; margin: 20px 0 10px 0;`,
 
     h4: `color: ${primaryColor}; font-size: 16px; font-weight: bold; margin: 16px 0 8px 0;`,
 
@@ -192,13 +212,13 @@ function buildTechStyles(
 
     li: `margin-bottom: 5px; color: ${fg};`,
 
-    strong: `color: #C45D1A; font-weight: 700;`,
+    strong: `color: ${adjustColorLightness('#C45D1A', lightnessOffset)}; font-weight: 700;`,
 
-    em: `font-style: italic; color: #B04F12;`,
+    em: `font-style: italic; color: ${adjustColorLightness('#B04F12', lightnessOffset)};`,
 
-    hr: `border: none; border-top: 1px solid #F0E8E0; margin: 16px 0;`,
+    hr: `border: none; border-top: 1px solid ${adjustColorLightness('#F0E8E0', lightnessOffset)}; margin: 16px 0;`,
 
-    codespan: `background: #FDF1E6; color: #B04F12; padding: 2px 7px; border-radius: 5px; font-size: 14px;`,
+    codespan: `background: ${adjustColorLightness('#FDF1E6', lightnessOffset)}; color: ${adjustColorLightness('#B04F12', lightnessOffset)}; padding: 2px 7px; border-radius: 5px; font-size: 14px;`,
 
     pre: `background: #1E1B18; border-radius: 12px; padding: 12px; margin: 20px 0; font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
 
@@ -206,25 +226,25 @@ function buildTechStyles(
 
     thead: `font-weight: bold; color: ${fg};`,
 
-    th: `background: #D97A35; color: #ffffff; padding: 13px 16px; font-weight: 600; border-bottom: none; text-align: left;`,
+    th: `background: ${adjustColorLightness('#D97A35', lightnessOffset)}; color: #ffffff; padding: 13px 16px; font-weight: 600; border-bottom: none; text-align: left;`,
 
     td: `padding: 12px 16px; border-bottom: none; color: ${fg};`,
 
     table: `border-collapse: collapse; width: 100%; border-radius: 8px; overflow: hidden; margin: 24px 0;`,
 
-    a: `color: ${primaryColor}; border-bottom: 1px solid rgba(232, 138, 60, 0.27); text-decoration: none;`,
+    a: `color: ${primaryColor}; border-bottom: 1px solid ${adjustColorLightness('rgba(232, 138, 60, 0.27)', lightnessOffset)}; text-decoration: none;`,
 
     img: `display: block; max-width: 100%; border-radius: 8px; margin: 16px 0;`,
 
     figcaption: `text-align: center; color: #888; font-size: 0.8em;`,
 
-    footnotes: `font-size: 12px; color: #8B7355; border-top: 1px solid #F0E8E0; padding-top: 16px; margin: 24px 0 0 0;`,
+    footnotes: `font-size: 12px; color: ${adjustColorLightness('#8B7355', lightnessOffset)}; border-top: 1px solid ${adjustColorLightness('#F0E8E0', lightnessOffset)}; padding-top: 16px; margin: 24px 0 0 0;`,
 
-    alertNote: `background: #FEF9F3; border-left-color: ${primaryColor};`,
-    alertTip: `background: #F3F8F4; border-left-color: #6DB87A;`,
-    alertImportant: `background: #FDF1E6; border-left-color: #E88A3C;`,
-    alertWarning: `background: #FFF8E7; border-left-color: #F5A623;`,
-    alertCaution: `background: #FFF0F0; border-left-color: #E85C5C;`,
+    alertNote: `background: ${adjustColorLightness('#FEF9F3', lightnessOffset)}; border-left-color: ${primaryColor};`,
+    alertTip: `background: ${adjustColorLightness('#F3F8F4', lightnessOffset)}; border-left-color: ${adjustColorLightness('#6DB87A', lightnessOffset)};`,
+    alertImportant: `background: ${adjustColorLightness('#FDF1E6', lightnessOffset)}; border-left-color: ${primaryColor};`,
+    alertWarning: `background: ${adjustColorLightness('#FFF8E7', lightnessOffset)}; border-left-color: ${adjustColorLightness('#F5A623', lightnessOffset)};`,
+    alertCaution: `background: ${adjustColorLightness('#FFF0F0', lightnessOffset)}; border-left-color: ${adjustColorLightness('#E85C5C', lightnessOffset)};`,
 
     figure: `margin: 16px 0;`,
 
@@ -243,21 +263,22 @@ function buildGrowthStyles(
   fontSize: string,
   fg: string,
   _blockquoteBackground: string,
-  containerBg: string
+  containerBg: string,
+  lightnessOffset: number
 ) {
-  // 成长主题使用固定的绿色配色，不受用户选择的颜色影响
-  const primaryColor = '#6DB87A';
-  const accentColor = '#8FCCA0';
-  const blockquoteBackground = '#F3F8F4';
+  // 成长主题使用固定的绿色配色，支持深浅调节
+  const primaryColor = adjustColorLightness('#6DB87A', lightnessOffset);
+  const accentColor = adjustColorLightness('#8FCCA0', lightnessOffset);
+  const blockquoteBackground = adjustColorLightness('#F3F8F4', lightnessOffset);
 
   return {
     container: `font-family: ${fontFamily}; font-size: ${fontSize}; line-height: 1.8; text-align: left; ${containerBg !== 'transparent' ? `background: ${containerBg};` : ''} padding: 0 12px;`,
 
     h1: `color: ${fg}; font-size: 26px; font-weight: 700; line-height: 1.3; margin: 0 0 24px 0;`,
 
-    h2: `color: #4A7A52; font-size: 20px; font-weight: 600; line-height: 1.42; margin: 28px auto 16px auto; text-align: center;`,
+    h2: `color: ${adjustColorLightness('#4A7A52', lightnessOffset)}; font-size: 20px; font-weight: 600; line-height: 1.42; margin: 28px auto 16px auto; text-align: center;`,
 
-    h3: `color: #5A8A62; font-size: 16px; font-weight: 600; line-height: 1.48; margin: 20px 0 10px 0;`,
+    h3: `color: ${adjustColorLightness('#5A8A62', lightnessOffset)}; font-size: 16px; font-weight: 600; line-height: 1.48; margin: 20px 0 10px 0;`,
 
     h4: `color: ${primaryColor}; font-size: 16px; font-weight: bold; margin: 16px 0 8px 0;`,
 
@@ -267,9 +288,9 @@ function buildGrowthStyles(
 
     p: `color: ${fg}; font-size: 16px; line-height: 1.8; margin: 0 0 16px 0; text-align: justify;`,
 
-    blockquote: `border-left: 3px solid ${primaryColor}; background: ${blockquoteBackground}; color: #4A5A42; font-style: italic; padding: 10px 10px 10px 14px; margin: 12px 0; border-radius: 0 8px 8px 0; font-size: 16px; line-height: 1.6;`,
+    blockquote: `border-left: 3px solid ${primaryColor}; background: ${blockquoteBackground}; color: ${adjustColorLightness('#4A5A42', lightnessOffset)}; font-style: italic; padding: 10px 10px 10px 14px; margin: 12px 0; border-radius: 0 8px 8px 0; font-size: 16px; line-height: 1.6;`,
 
-    blockquoteP: `color: #4A5A42; margin: 0;`,
+    blockquoteP: `color: ${adjustColorLightness('#4A5A42', lightnessOffset)}; margin: 0;`,
 
     ul: `list-style: disc; padding-left: 24px; margin: 12px 0; color: ${fg};`,
 
@@ -279,37 +300,37 @@ function buildGrowthStyles(
 
     strong: `color: ${fg}; font-weight: 700;`,
 
-    em: `font-style: italic; color: #4A7A52;`,
+    em: `font-style: italic; color: ${adjustColorLightness('#4A7A52', lightnessOffset)};`,
 
-    hr: `border: none; border-top: 1px solid #E0E8E2; margin: 16px 0;`,
+    hr: `border: none; border-top: 1px solid ${adjustColorLightness('#E0E8E2', lightnessOffset)}; margin: 16px 0;`,
 
-    codespan: `background: #EDF5EE; color: ${fg}; padding: 2px 7px; border-radius: 4px; font-size: 14px;`,
+    codespan: `background: ${adjustColorLightness('#EDF5EE', lightnessOffset)}; color: ${fg}; padding: 2px 7px; border-radius: 4px; font-size: 14px;`,
 
-    pre: `background: #EDF5EE; border-radius: 8px; padding: 12px; margin: 20px 0; font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
+    pre: `background: ${adjustColorLightness('#EDF5EE', lightnessOffset)}; border-radius: 8px; padding: 12px; margin: 20px 0; font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
 
     codeInPre: `color: ${fg}; background: transparent;`,
 
     thead: `font-weight: bold; color: ${fg};`,
 
-    th: `background: #5A8A62; color: #ffffff; padding: 12px 16px; font-weight: 600; border-bottom: none; text-align: left;`,
+    th: `background: ${adjustColorLightness('#5A8A62', lightnessOffset)}; color: #ffffff; padding: 12px 16px; font-weight: 600; border-bottom: none; text-align: left;`,
 
     td: `padding: 12px 16px; border-bottom: none; color: ${fg};`,
 
     table: `border-collapse: collapse; width: 100%; border-radius: 6px; overflow: hidden; margin: 24px 0;`,
 
-    a: `color: #4A7A52; border-bottom: 1px solid rgba(109, 184, 122, 0.27); text-decoration: none;`,
+    a: `color: ${adjustColorLightness('#4A7A52', lightnessOffset)}; border-bottom: 1px solid ${adjustColorLightness('rgba(109, 184, 122, 0.27)', lightnessOffset)}; text-decoration: none;`,
 
     img: `display: block; max-width: 100%; border-radius: 6px; margin: 16px 0;`,
 
     figcaption: `text-align: center; color: #888; font-size: 0.8em;`,
 
-    footnotes: `font-size: 13px; color: #6B7A6B; border-top: 1px solid #E0E8E2; padding-top: 18px; margin: 24px 0 0 0;`,
+    footnotes: `font-size: 13px; color: ${adjustColorLightness('#6B7A6B', lightnessOffset)}; border-top: 1px solid ${adjustColorLightness('#E0E8E2', lightnessOffset)}; padding-top: 18px; margin: 24px 0 0 0;`,
 
-    alertNote: `background: #F3F8F4; border-left-color: ${primaryColor};`,
-    alertTip: `background: #F0F7F1; border-left-color: ${accentColor};`,
-    alertImportant: `background: #F5F8F5; border-left-color: ${primaryColor};`,
-    alertWarning: `background: #FDF8E7; border-left-color: #E8C547;`,
-    alertCaution: `background: #FFF0F0; border-left-color: #E85C5C;`,
+    alertNote: `background: ${adjustColorLightness('#F3F8F4', lightnessOffset)}; border-left-color: ${primaryColor};`,
+    alertTip: `background: ${adjustColorLightness('#F0F7F1', lightnessOffset)}; border-left-color: ${accentColor};`,
+    alertImportant: `background: ${adjustColorLightness('#F5F8F5', lightnessOffset)}; border-left-color: ${primaryColor};`,
+    alertWarning: `background: ${adjustColorLightness('#FDF8E7', lightnessOffset)}; border-left-color: ${adjustColorLightness('#E8C547', lightnessOffset)};`,
+    alertCaution: `background: ${adjustColorLightness('#FFF0F0', lightnessOffset)}; border-left-color: ${adjustColorLightness('#E85C5C', lightnessOffset)};`,
 
     figure: `margin: 16px 0;`,
 
@@ -327,15 +348,17 @@ function buildGrowthStyles(
  * 不使用 CSS 变量 + juice，直接生成内联样式
  */
 export function buildInlineStyles(style: StyleConfig) {
-  const { primaryColor, fontFamily, fontSize, foreground, blockquoteBackground, containerBg, accentColor, theme } = style;
+  const { primaryColor, fontFamily, fontSize, foreground, blockquoteBackground, containerBg, accentColor, theme, colorLightness } = style;
   // Convert HSL foreground to hex
   const fg = foreground.includes('%') ? parseHslToHex(foreground) : foreground;
+  // 应用颜色深浅调节
+  const lightnessOffset = colorLightness || 0;
 
   switch (theme) {
     case 'tech':
-      return buildTechStyles(primaryColor, fontFamily, fontSize, fg, blockquoteBackground, containerBg, accentColor || '#F5A65A');
+      return buildTechStyles(primaryColor, fontFamily, fontSize, fg, blockquoteBackground, containerBg, accentColor || '#F5A65A', lightnessOffset);
     case 'growth':
     default:
-      return buildGrowthStyles(primaryColor, fontFamily, fontSize, fg, blockquoteBackground, containerBg);
+      return buildGrowthStyles(primaryColor, fontFamily, fontSize, fg, blockquoteBackground, containerBg, lightnessOffset);
   }
 }

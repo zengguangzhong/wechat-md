@@ -17,6 +17,7 @@ export interface StyleConfig {
   accentColor: string;
   containerBg: string;
   theme?: ThemeName;
+  colorLightness?: number;
 }
 
 export interface ConvertOptions {
