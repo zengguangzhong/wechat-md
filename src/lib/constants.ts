@@ -25,7 +25,7 @@ export const COLOR_PRESETS: Record<string, string> = {
   orange: '#D97757',
 };
 
-export const THEME_NAMES = ['default', 'grace', 'simple', 'modern'] as const;
+export const THEME_NAMES = ['default', 'grace', 'simple', 'modern', 'tech', 'growth'] as const;
 
 export const DEFAULT_STYLE: StyleConfig = {
   primaryColor: '#0F4C81',
@@ -42,12 +42,30 @@ export const THEME_STYLE_DEFAULTS: Record<string, Partial<StyleConfig>> = {
   grace: { primaryColor: COLOR_PRESETS.purple },
   simple: { primaryColor: COLOR_PRESETS.green },
   modern: {
-    primaryColor: COLOR_PRESETS.blue,
+    primaryColor: COLOR_PRESETS.orange,
     accentColor: '#E4B1A0',
     containerBg: 'rgba(250, 249, 245, 1)',
     fontFamily: FONT_FAMILY_MAP.sans,
     fontSize: '15px',
     blockquoteBackground: 'rgba(255, 255, 255, 0.6)',
+  },
+  tech: {
+    primaryColor: '#E88A3C',
+    accentColor: '#F5A65A',
+    containerBg: '#FCFAF7',
+    fontFamily: FONT_FAMILY_MAP.sans,
+    fontSize: '16px',
+    blockquoteBackground: '#FEF9F3',
+    foreground: '#3D3426',
+  },
+  growth: {
+    primaryColor: '#6DB87A',
+    accentColor: '#8FCCA0',
+    containerBg: '#FAFCF8',
+    fontFamily: FONT_FAMILY_MAP.serif,
+    fontSize: '16px',
+    blockquoteBackground: '#F3F8F4',
+    foreground: '#2E3328',
   },
 };
 

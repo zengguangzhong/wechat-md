@@ -1,9 +1,9 @@
 import type { ReadTimeResults } from 'reading-time';
 
-export type ThemeName = 'default' | 'grace' | 'simple' | 'modern';
+export type ThemeName = 'tech' | 'growth';
 
 export interface ParseResult {
-  yamlData: Record<string, any>;
+  yamlData: Record<string, unknown>;
   markdownContent: string;
   readingTime: ReadTimeResults;
 }
@@ -16,6 +16,7 @@ export interface StyleConfig {
   blockquoteBackground: string;
   accentColor: string;
   containerBg: string;
+  theme?: ThemeName;
 }
 
 export interface ConvertOptions {
@@ -30,4 +31,5 @@ export interface ConvertOptions {
   showReadingTime?: boolean;
   keepTitle?: boolean;
   legend?: string;
+  colorLightness?: number;
 }

@@ -1,4 +1,5 @@
-import frontMatter from 'front-matter';
+"use client";
+
 import hljs from 'highlight.js/lib/core';
 import type { LanguageFn } from 'highlight.js';
 import { marked, type RendererObject, type Tokens } from 'marked';
@@ -59,11 +60,26 @@ marked.setOptions({ breaks: true });
 
 function parseFrontMatterAndContent(markdownText: string): ParseResult {
   try {
-    const parsed = frontMatter(markdownText);
-    const yamlData = parsed.attributes as Record<string, unknown>;
-    const markdownContent = parsed.body;
-    const readingTimeResult = readingTime(markdownContent);
-    return { yamlData, markdownContent, readingTime: readingTimeResult };
+    // Simple front-matter parser (no external dependency)
+    const fmRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+    const match = markdownText.match(fmRegex);
+    if (match) {
+      const yamlText = match[1];
+      const body = match[2];
+      const yamlData: Record<string, unknown> = {};
+      yamlText.split('\n').forEach((line) => {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx > 0) {
+          const key = line.slice(0, colonIdx).trim();
+          const value = line.slice(colonIdx + 1).trim();
+          yamlData[key] = value;
+        }
+      });
+      const readingTimeResult = readingTime(body);
+      return { yamlData, markdownContent: body, readingTime: readingTimeResult };
+    }
+    const readingTimeResult = readingTime(markdownText);
+    return { yamlData: {}, markdownContent: markdownText, readingTime: readingTimeResult };
   } catch {
     return {
       yamlData: {},

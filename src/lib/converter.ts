@@ -26,6 +26,7 @@ export async function convertToWechatHtml(
   const style: StyleConfig = {
     ...DEFAULT_STYLE,
     ...themeDefaults,
+    theme: options.theme,
     ...(primaryColor ? { primaryColor } : {}),
     ...(fontFamily ? { fontFamily } : {}),
     ...(options.fontSize ? { fontSize: options.fontSize } : {}),

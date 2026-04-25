@@ -1,6 +1,15 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { renderMarkdown } from "@/lib/client-converter";
+import {
+  DEFAULT_STYLE,
+  THEME_STYLE_DEFAULTS,
+  COLOR_PRESETS as LIB_COLOR_PRESETS,
+  FONT_FAMILY_MAP,
+} from "@/lib/constants";
+import { adjustLightness } from "@/lib/color-utils";
+import type { ConvertOptions, StyleConfig } from "@/lib/types";
 
 const SAMPLE_MD = `# 用 AI 重塑内容创作
 
@@ -61,26 +70,11 @@ console.log(future); // 🚀
 **试试切换不同的主题和配色**，找到你最喜欢的风格 🎨
 `;
 
-type ThemeName = "default" | "grace" | "simple" | "modern";
-
-interface ConvertOptions {
-  theme: ThemeName;
-  primaryColor?: string;
-  fontFamily?: string;
-  fontSize?: string;
-  macCodeBlock?: boolean;
-  showLineNumber?: boolean;
-  citeLinks?: boolean;
-  showReadingTime?: boolean;
-  keepTitle?: boolean;
-  legend?: string;
-}
+type ThemeName = "tech" | "growth";
 
 const THEMES: { name: ThemeName; label: string; desc: string }[] = [
-  { name: "default", label: "经典", desc: "简洁经典，适合技术文章" },
-  { name: "grace", label: "优雅", desc: "柔和阴影，适合人文感悟" },
-  { name: "simple", label: "简洁", desc: "极简设计，适合干货分享" },
-  { name: "modern", label: "现代", desc: "圆角药丸，适合潮流内容" },
+  { name: "tech", label: "科技", desc: "温暖创新，适合AI/技术文章" },
+  { name: "growth", label: "成长", desc: "安静生长，适合成长感悟" },
 ];
 
 const COLOR_PRESETS = [
@@ -111,7 +105,7 @@ const FONT_SIZE_OPTIONS = ["14px", "15px", "16px", "17px", "18px"];
 export default function EditorPage() {
   const [markdown, setMarkdown] = useState(SAMPLE_MD);
   const [html, setHtml] = useState("");
-  const [theme, setTheme] = useState<ThemeName>("default");
+  const [theme, setTheme] = useState<ThemeName>("tech");
   const [primaryColor, setPrimaryColor] = useState("blue");
   const [customColor, setCustomColor] = useState("#0F4C81");
   const [fontFamily, setFontFamily] = useState("sans");
@@ -126,21 +120,33 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
+  const [colorLightness, setColorLightness] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const doConvert = useCallback(async (md: string, opts: ConvertOptions) => {
+  const doConvert = useCallback((md: string, opts: ConvertOptions) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/convert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markdown: md, ...opts }),
-      });
-      const data = await res.json();
-      if (data.html) {
-        setHtml(data.html);
+      let primaryColor = opts.primaryColor
+        ? LIB_COLOR_PRESETS[opts.primaryColor] ?? opts.primaryColor
+        : undefined;
+      if (primaryColor && opts.colorLightness) {
+        primaryColor = adjustLightness(primaryColor, opts.colorLightness);
       }
+      const fontFamily = opts.fontFamily
+        ? FONT_FAMILY_MAP[opts.fontFamily] ?? opts.fontFamily
+        : undefined;
+      const themeDefaults = THEME_STYLE_DEFAULTS[opts.theme] || {};
+      const style: StyleConfig = {
+        ...DEFAULT_STYLE,
+        ...themeDefaults,
+        ...(primaryColor ? { primaryColor } : {}),
+        ...(fontFamily ? { fontFamily } : {}),
+        ...(opts.fontSize ? { fontSize: opts.fontSize } : {}),
+        theme: opts.theme,
+      };
+      const { html: renderedHtml } = renderMarkdown(md, opts, style);
+      setHtml(renderedHtml);
     } catch (err) {
       console.error("Convert failed:", err);
     } finally {
@@ -164,14 +170,16 @@ export default function EditorPage() {
         showReadingTime,
         keepTitle,
         legend: legend === "none" ? undefined : legend,
+        colorLightness,
       });
-    }, 400);
+    }, 100);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [
     markdown, theme, primaryColor, customColor, fontFamily, fontSize,
     macCodeBlock, showLineNumber, citeLinks, showReadingTime, keepTitle, legend,
+    colorLightness,
     doConvert,
   ]);
 
@@ -273,9 +281,12 @@ export default function EditorPage() {
                 {COLOR_PRESETS.map((c) => (
                   <button
                     key={c.name}
-                    onClick={() => setPrimaryColor(c.name)}
+                    onClick={() => {
+                      setPrimaryColor(c.name);
+                      setColorLightness(0);
+                    }}
                     className={`w-7 h-7 rounded-full border-2 transition-all ${
-                      primaryColor === c.name
+                      primaryColor === c.name && colorLightness === 0
                         ? "border-blue-500 scale-110"
                         : "border-gray-200 hover:border-gray-400"
                     }`}
@@ -284,17 +295,59 @@ export default function EditorPage() {
                   />
                 ))}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-3">
                 <input
                   type="color"
                   value={customColor}
                   onChange={(e) => {
                     setCustomColor(e.target.value);
                     setPrimaryColor("custom");
+                    setColorLightness(0);
                   }}
                   className="w-7 h-7 rounded cursor-pointer border-0"
                 />
                 <span className="text-xs text-gray-500">自定义颜色</span>
+              </div>
+
+              {/* Lightness Slider */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-gray-400">颜色深浅</span>
+                  <span className="text-[10px] text-gray-500 font-medium">
+                    {colorLightness > 0 ? `+${colorLightness}%` : `${colorLightness}%`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-gray-400">浅</span>
+                  <input
+                    type="range"
+                    min={-40}
+                    max={40}
+                    value={colorLightness}
+                    onChange={(e) => setColorLightness(Number(e.target.value))}
+                    className="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  />
+                  <span className="text-[10px] text-gray-400">深</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded border border-gray-200"
+                    style={{
+                      backgroundColor: (() => {
+                        const base =
+                          COLOR_PRESETS.find((c) => c.name === primaryColor)?.color || customColor;
+                        return colorLightness ? adjustLightness(base, colorLightness) : base;
+                      })(),
+                    }}
+                  />
+                  <span className="text-[10px] text-gray-500 font-mono">
+                    {(() => {
+                      const base =
+                        COLOR_PRESETS.find((c) => c.name === primaryColor)?.color || customColor;
+                      return colorLightness ? adjustLightness(base, colorLightness) : base;
+                    })()}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -552,7 +605,7 @@ export default function EditorPage() {
               )}
             </div>
               <div className="flex-1 overflow-y-auto bg-gray-50">
-              <div style={{ maxWidth: '860px', margin: '16px auto', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderRadius: '2px' }}>
+              <div style={{ maxWidth: '860px', margin: '16px auto' }}>
                 <div
                   ref={previewRef}
                   className="p-6"
