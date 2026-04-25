@@ -1,5 +1,5 @@
 import type { StyleConfig } from './types';
-import { DEFAULT_STYLE } from './constants';
+import { DEFAULT_STYLE, DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from './constants';
 
 export function buildCss(
   baseCss: string,
@@ -9,8 +9,8 @@ export function buildCss(
   const variables = `
 :root {
   --md-primary-color: ${style.primaryColor};
-  --md-font-family: ${style.fontFamily};
-  --md-font-size: ${style.fontSize};
+  --md-font-family: ${style.fontFamily || DEFAULT_FONT_FAMILY};
+  --md-font-size: ${style.fontSize || DEFAULT_FONT_SIZE};
   --foreground: ${style.foreground};
   --blockquote-background: ${style.blockquoteBackground};
   --md-accent-color: ${style.accentColor};
@@ -54,8 +54,8 @@ export function normalizeCssText(
 ): string {
   return cssText
     .replace(/var\(--md-primary-color\)/g, style.primaryColor)
-    .replace(/var\(--md-font-family\)/g, style.fontFamily)
-    .replace(/var\(--md-font-size\)/g, style.fontSize)
+    .replace(/var\(--md-font-family\)/g, style.fontFamily || DEFAULT_FONT_FAMILY)
+    .replace(/var\(--md-font-size\)/g, style.fontSize || DEFAULT_FONT_SIZE)
     .replace(/var\(--blockquote-background\)/g, style.blockquoteBackground)
     .replace(/var\(--md-accent-color\)/g, style.accentColor)
     .replace(/var\(--md-container-bg\)/g, style.containerBg)

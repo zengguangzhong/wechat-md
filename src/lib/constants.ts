@@ -7,6 +7,9 @@ export const FONT_FAMILY_MAP: Record<string, string> = {
   mono: 'Menlo, Monaco, "Courier New", monospace',
 };
 
+export const DEFAULT_FONT_FAMILY = FONT_FAMILY_MAP.sans;
+export const DEFAULT_FONT_SIZE = '16px';
+
 export const FONT_SIZE_OPTIONS = ['14px', '15px', '16px', '17px', '18px'];
 
 export const COLOR_PRESETS: Record<string, string> = {
@@ -74,3 +77,7 @@ export const macCodeSvg = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
     <ellipse cx="225" cy="65" rx="50" ry="52" stroke="rgb(218,151,33)" stroke-width="2" fill="rgb(247,193,81)" />
     <ellipse cx="400" cy="65" rx="50" ry="52" stroke="rgb(27,161,37)" stroke-width="2" fill="rgb(100,200,86)" />
   </svg>`;
+
+export const copyButtonSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+
+export const copiedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6DB87A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;

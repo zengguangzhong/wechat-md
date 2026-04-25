@@ -1,5 +1,6 @@
 import type { StyleConfig } from './types';
 import { hexToHsl, hslToHex } from './color-utils';
+import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from './constants';
 
 /**
  * 调节颜色深浅
@@ -186,7 +187,7 @@ function buildTechStyles(
   const blockquoteBackground = '#FEF9F3';
 
   return {
-    container: `font-family: ${fontFamily}; font-size: ${fontSize}; line-height: 1.8; text-align: left; ${containerBg !== 'transparent' ? `background: ${containerBg};` : ''} padding: 0 10px;`,
+    container: `font-family: ${fontFamily || DEFAULT_FONT_FAMILY}; font-size: ${fontSize || DEFAULT_FONT_SIZE}; line-height: 1.8; text-align: left; ${containerBg !== 'transparent' ? `background: ${containerBg};` : ''} padding: 0 10px;`,
 
     h1: `color: ${adjustColorLightness('#C45D1A', lightnessOffset)}; font-size: 24px; font-weight: 800; line-height: 1.3; border-bottom: 2.5px solid ${accentColor}; padding-bottom: 11px; margin: 0 0 24px 0;`,
 
@@ -220,7 +221,7 @@ function buildTechStyles(
 
     codespan: `background: ${adjustColorLightness('#FDF1E6', lightnessOffset)}; color: ${adjustColorLightness('#B04F12', lightnessOffset)}; padding: 2px 7px; border-radius: 5px; font-size: 14px;`,
 
-    pre: `background: #1E1B18; border-radius: 12px; padding: 12px; margin: 20px 0; font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
+    pre: `background: #1E1B18; border-radius: 12px; padding: 12px; margin: 20px 0; font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
 
     codeInPre: `color: #E8E2DC; background: transparent;`,
 
@@ -272,7 +273,7 @@ function buildGrowthStyles(
   const blockquoteBackground = adjustColorLightness('#F3F8F4', lightnessOffset);
 
   return {
-    container: `font-family: ${fontFamily}; font-size: ${fontSize}; line-height: 1.8; text-align: left; ${containerBg !== 'transparent' ? `background: ${containerBg};` : ''} padding: 0 12px;`,
+    container: `font-family: ${fontFamily || DEFAULT_FONT_FAMILY}; font-size: ${fontSize || DEFAULT_FONT_SIZE}; line-height: 1.8; text-align: left; ${containerBg !== 'transparent' ? `background: ${containerBg};` : ''} padding: 0 12px;`,
 
     h1: `color: ${fg}; font-size: 26px; font-weight: 700; line-height: 1.3; margin: 0 0 24px 0;`,
 
@@ -306,7 +307,7 @@ function buildGrowthStyles(
 
     codespan: `background: ${adjustColorLightness('#EDF5EE', lightnessOffset)}; color: ${fg}; padding: 2px 7px; border-radius: 4px; font-size: 14px;`,
 
-    pre: `background: ${adjustColorLightness('#EDF5EE', lightnessOffset)}; border-radius: 8px; padding: 12px; margin: 20px 0; font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
+    pre: `background: ${adjustColorLightness('#EDF5EE', lightnessOffset)}; border-radius: 8px; padding: 12px; margin: 20px 0; font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
 
     codeInPre: `color: ${fg}; background: transparent;`,
 
