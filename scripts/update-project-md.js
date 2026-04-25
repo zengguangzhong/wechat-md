@@ -3,7 +3,9 @@
 
 /**
  * 自动更新 PROJECT.md 文档
- * 在 git commit 时自动运行，根据代码变更更新项目文档
+ * 支持两种模式：
+ *   --pre-commit  : 只更新日期和统计信息
+ *   --post-commit : 追加日志条目（包含正确的 hash）
  */
 
 const { execSync } = require('child_process');
@@ -13,6 +15,8 @@ const path = require('path');
 const PROJECT_DIR = process.cwd();
 const PROJECT_MD = path.join(PROJECT_DIR, 'PROJECT.md');
 const TODAY = new Date().toISOString().split('T')[0];
+
+const mode = process.argv[2]; // --pre-commit 或 --post-commit
 
 function log(msg) {
   console.log(`[update-project-md] ${msg}`);
@@ -26,9 +30,8 @@ function run(cmd) {
   }
 }
 
-// 获取最近一次提交的变更文件
+// 获取最近一次提交的变更文件（post-commit 场景）
 function getChangedFiles() {
-  // post-commit hook 中，提交已完成，使用 HEAD~1 对比
   const diff = run('git diff HEAD~1 --name-status');
   if (!diff) return [];
   return diff.split('\n').filter(Boolean).map(line => {
@@ -37,18 +40,8 @@ function getChangedFiles() {
   });
 }
 
-// 获取提交信息
-// 在 pre-commit hook 中，提交尚未完成，从暂存区读取提交信息
+// 获取已完成的提交信息（post-commit 场景）
 function getCommitInfo() {
-  // 优先尝试读取暂存区的提交信息（pre-commit 场景）
-  const cachedMsg = run('git diff --cached --quiet || git log -1 --pretty=%B --cached 2>/dev/null');
-  if (cachedMsg) {
-    const msg = cachedMsg.split('\n')[0];
-    // pre-commit 时 hash 还未生成，使用 pending
-    return { msg, hash: 'pending' };
-  }
-
-  // 回退到已完成的提交（post-commit 场景）
   const msg = run('git log -1 --pretty=%B') || 'pending';
   const hash = run('git rev-parse --short HEAD') || 'pending';
   return { msg: msg.split('\n')[0], hash };
@@ -61,64 +54,88 @@ function getProjectStats() {
   return { srcFiles: parseInt(srcFiles) || 0, totalLines: parseInt(totalLines) || 0 };
 }
 
-// 更新文档
-function updateProjectMd(changes) {
-  if (!fs.existsSync(PROJECT_MD)) {
-    log('PROJECT.md not found, skipping');
-    return;
-  }
-
-  let content = fs.readFileSync(PROJECT_MD, 'utf-8');
-
+// 更新日期和统计信息
+function updateDateAndStats(content) {
   // 更新最后更新日期
   content = content.replace(
     /> 最后更新：.*/,
     `> 最后更新：${TODAY}`
   );
 
-  // 更新项目统计（如果有这个区块）
+  // 更新项目统计
   const stats = getProjectStats();
   if (stats.srcFiles > 0) {
-    const statsBlock = `### 项目统计
-
-- **源文件数**：${stats.srcFiles}
-- **代码行数**：${stats.totalLines}
-- **最后更新**：${TODAY}`;
+    const statsBlock = `### 项目统计\n\n- **源文件数**：${stats.srcFiles}\n- **代码行数**：${stats.totalLines}\n- **最后更新**：${TODAY}`;
 
     if (content.includes('### 项目统计')) {
       content = content.replace(/### 项目统计[\s\S]*?(?=\n###|\n---|\n##|$)/, statsBlock + '\n\n');
     } else {
-      // 在"开发指南"之前插入
       content = content.replace('## 九、开发指南', `${statsBlock}\n---\n\n## 九、开发指南`);
     }
   }
 
-  // 更新更新日志
-  const { msg, hash } = getCommitInfo();
-  const logEntry = `| ${TODAY} | ${msg} | \`${hash}\` |`;
+  return content;
+}
 
-  // 检查是否已经有该提交的记录（用 hash 判断更准确）
-  if (!content.includes(hash)) {
-    content = content.replace(
-      '| 日期 | 更新内容 | 提交 |',
-      '| 日期 | 更新内容 | 提交 |\n' + logEntry
-    );
+// 追加日志条目
+function appendLogEntry(content) {
+  const { msg, hash } = getCommitInfo();
+
+  // 避免重复追加
+  if (content.includes(hash)) {
+    log(`Log entry for ${hash} already exists, skipping`);
+    return content;
   }
 
-  fs.writeFileSync(PROJECT_MD, content, 'utf-8');
-  log('PROJECT.md updated');
+  const logEntry = `| ${TODAY} | ${msg} | \`${hash}\` |`;
+  content = content.replace(
+    '| 日期 | 更新内容 | 提交 |',
+    '| 日期 | 更新内容 | 提交 |\n' + logEntry
+  );
+
+  return content;
 }
 
 // 主函数
 function main() {
-  const changes = getChangedFiles();
-  if (changes.length === 0) {
-    log('No changes detected, skipping');
+  if (!fs.existsSync(PROJECT_MD)) {
+    log('PROJECT.md not found, skipping');
     return;
   }
 
-  log(`Detected ${changes.length} changed file(s)`);
-  updateProjectMd(changes);
+  let content = fs.readFileSync(PROJECT_MD, 'utf-8');
+  let updated = false;
+
+  if (mode === '--pre-commit') {
+    // pre-commit: 只更新日期和统计
+    const newContent = updateDateAndStats(content);
+    if (newContent !== content) {
+      content = newContent;
+      updated = true;
+      log('Date and stats updated');
+    }
+  } else if (mode === '--post-commit') {
+    // post-commit: 追加日志条目
+    const newContent = appendLogEntry(content);
+    if (newContent !== content) {
+      content = newContent;
+      updated = true;
+      log('Log entry appended');
+    }
+  } else {
+    // 默认行为：全部更新（兼容旧用法）
+    content = updateDateAndStats(content);
+    content = appendLogEntry(content);
+    updated = true;
+    log('Full update completed');
+  }
+
+  if (updated) {
+    fs.writeFileSync(PROJECT_MD, content, 'utf-8');
+    log('PROJECT.md saved');
+  } else {
+    log('No changes needed');
+  }
 }
 
 main();
