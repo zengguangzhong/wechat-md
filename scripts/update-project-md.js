@@ -37,8 +37,18 @@ function getChangedFiles() {
   });
 }
 
-// 获取最近一次提交信息
+// 获取提交信息
+// 在 pre-commit hook 中，提交尚未完成，从暂存区读取提交信息
 function getCommitInfo() {
+  // 优先尝试读取暂存区的提交信息（pre-commit 场景）
+  const cachedMsg = run('git diff --cached --quiet || git log -1 --pretty=%B --cached 2>/dev/null');
+  if (cachedMsg) {
+    const msg = cachedMsg.split('\n')[0];
+    // pre-commit 时 hash 还未生成，使用 pending
+    return { msg, hash: 'pending' };
+  }
+
+  // 回退到已完成的提交（post-commit 场景）
   const msg = run('git log -1 --pretty=%B') || 'pending';
   const hash = run('git rev-parse --short HEAD') || 'pending';
   return { msg: msg.split('\n')[0], hash };
