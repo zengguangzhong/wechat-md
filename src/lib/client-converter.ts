@@ -248,7 +248,7 @@ export function renderMarkdown(
 
       const macSignStyle = options.macCodeBlock !== false ? 'display:flex' : 'display:none';
       const span = `<span class="mac-sign" style="${macSignStyle};padding:10px 14px 0">${macCodeSvg}</span>`;
-      const copyBtn = `<span class="code-copy-btn" data-code="${encodeURIComponent(text)}" style="position:absolute;top:8px;right:8px;padding:4px 8px;background:rgba(255,255,255,0.1);border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;opacity:0.7;transition:opacity 0.2s">${copyButtonSvg}<span style="color:#E8E2DC">复制</span></span>`;
+      const copyBtn = `<span class="code-copy-btn" data-code="${encodeURIComponent(text)}" style="position:absolute;top:8px;right:8px;padding:4px 8px;background:rgba(255,255,255,0.1);border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;opacity:0.7;transition:opacity 0.2s;white-space:nowrap">${copyButtonSvg}<span style="color:#E8E2DC">复制</span></span>`;
       const code = `<code class="language-${lang}" style="${s.codeInPre}">${styledHighlighted}</code>`;
       return `<pre class="hljs code__pre" style="${s.pre};position:relative">${span}${copyBtn}${code}</pre>`;
     },
