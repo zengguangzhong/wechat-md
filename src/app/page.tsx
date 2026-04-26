@@ -6,7 +6,6 @@ import {
   DEFAULT_STYLE,
   THEME_STYLE_DEFAULTS,
   FONT_FAMILY_MAP,
-  copiedSvg,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
 } from "@/lib/constants";
@@ -158,31 +157,7 @@ export default function EditorPage() {
     doConvert,
   ]);
 
-  useEffect(() => {
-    const handleCodeCopy = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const copyBtn = target.closest('.code-copy-btn') as HTMLElement | null;
-      if (!copyBtn) return;
 
-      e.preventDefault();
-      e.stopPropagation();
-
-      const code = decodeURIComponent(copyBtn.getAttribute('data-code') || '');
-      navigator.clipboard.writeText(code).then(() => {
-        const textSpan = copyBtn.querySelector('span');
-        const originalHtml = copyBtn.innerHTML;
-        copyBtn.innerHTML = copiedSvg;
-        copyBtn.style.opacity = '1';
-        setTimeout(() => {
-          copyBtn.innerHTML = originalHtml;
-        }, 1500);
-      });
-    };
-
-    const previewEl = previewRef.current;
-    previewEl?.addEventListener('click', handleCodeCopy);
-    return () => previewEl?.removeEventListener('click', handleCodeCopy);
-  }, []);
 
   const handleCopy = async () => {
     if (!previewRef.current) return;

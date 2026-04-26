@@ -223,8 +223,7 @@ function buildTechStyles(
 
     pre: `background: #1E1B18; border-radius: 12px; padding: 12px; margin: 20px 0; font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
 
-    codeInPre: `color: #E8E2DC; background: transparent;`,
-    copyBtnColor: `#E8E2DC`,
+    codeInPre: `color: #E8E2DC; background: transparent`,
 
     thead: `font-weight: bold; color: ${fg};`,
 
@@ -310,8 +309,7 @@ function buildGrowthStyles(
 
     pre: `background: ${adjustColorLightness('#EDF5EE', lightnessOffset)}; border-radius: 8px; padding: 12px; margin: 20px 0; font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace; font-size: 13px; overflow-x: auto;`,
 
-    codeInPre: `color: ${fg}; background: transparent;`,
-    copyBtnColor: `${fg}`,
+    codeInPre: `color: ${fg}; background: transparent`,
 
     thead: `font-weight: bold; color: ${fg};`,
 
